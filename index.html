@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>候选人档案｜星桥科技招聘管理系统</title>
+<style>
+:root{
+  --blue:#2f5fb3;--blue-deep:#1f438c;--line:#e4e8ee;--muted:#7a8494;--bg:#f3f5f8;
+  --ink:#20293a;--panel:#fff;--green:#2c9a6a;--amber:#c98a2c;--sidebar:#182338;--sidebar-line:#2a3550;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"PingFang SC","Microsoft YaHei",Arial,sans-serif;font-size:14px}
+a{color:inherit;text-decoration:none;cursor:pointer}
+.app{display:flex;min-height:100vh}
+
+.sidebar{width:216px;flex:none;background:var(--sidebar);color:#c7cede;display:flex;flex-direction:column;padding:18px 0}
+.sidebar-brand{display:flex;align-items:center;gap:10px;padding:0 18px 18px;border-bottom:1px solid var(--sidebar-line);margin-bottom:14px}
+.sidebar-brand .logo{width:32px;height:32px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px}
+.sidebar-brand .name{font-size:13px;font-weight:700;color:#fff}
+.sidebar-brand .sub{font-size:11px;color:#8b93a8;margin-top:1px}
+.sidenav{display:flex;flex-direction:column;padding:0 10px;gap:2px}
+.sidenav a{padding:9px 12px;border-radius:7px;font-size:12.5px;color:#aab2c4}
+.sidenav a.active{background:rgba(255,255,255,.08);color:#fff;font-weight:600}
+.sidenav a.disabled{color:#5c6478;cursor:default}
+.sidebar-foot{margin-top:auto;padding:12px 18px 0;border-top:1px solid var(--sidebar-line);font-size:11.5px;color:#8b93a8}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:56px;flex:none;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 26px;gap:16px}
+.crumbs{font-size:12.5px;color:var(--muted)}
+.crumbs b{color:var(--ink);font-weight:600}
+.search{margin-left:auto;height:32px;width:220px;border:1px solid var(--line);border-radius:7px;padding:0 10px;font-size:12px;color:#b0b8c4;background:#fafbfc}
+.content{padding:26px 30px 60px;max-width:980px;width:100%;margin:0 auto}
+
+/* 页面停留提示（无进度条） */
+.stay-hint{display:flex;align-items:center;gap:8px;margin-bottom:18px;padding:10px 16px;background:#fff;border:1px solid var(--line);border-radius:9px;font-size:12.5px;color:var(--muted)}
+.stay-hint .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);flex:none}
+.stay-hint .count{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.stay-hint.done .dot{background:var(--green)}
+.stay-hint.done .count{color:var(--green)}
+.stay-hint.hide{display:none}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
+.panel-head h1{font-size:16px;margin:0}
+.muted{color:var(--muted);font-size:12px}
+table.candtable{width:100%;border-collapse:collapse}
+.candtable th{text-align:left;font-size:11.5px;color:var(--muted);font-weight:500;padding:10px 20px;border-bottom:1px solid var(--line)}
+.candtable td{padding:13px 20px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+.candtable tr:last-child td{border-bottom:0}
+tr.row-active{cursor:pointer}
+tr.row-active:hover{background:#f7f9fc}
+tr.row-disabled{color:#aab2c0}
+tr.row-disabled .pname,tr.row-disabled .psub{color:#aab2c0}
+.person{display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;border-radius:8px;background:#e7edf8;color:var(--blue-deep);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+tr.row-disabled .avatar{background:#eef0f3;color:#b3b9c4}
+.pname{font-weight:600;font-size:13px}
+.psub{font-size:11.5px;color:var(--muted);margin-top:1px}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px}
+.pill-done{background:#e8f5ee;color:var(--green)}
+.pill-pending{background:#eaf1fc;color:var(--blue-deep)}
+.pill-wait{background:#f1f2f5;color:#8992a1}
+.link{font-size:12px;color:var(--blue)}
+
+.back-row{margin-bottom:14px}
+.backlink{font-size:12.5px;color:var(--muted)}
+.backlink:hover{color:var(--blue)}
+.candidate-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.candidate-head .avatar.big{width:44px;height:44px;border-radius:10px;font-size:16px}
+.candidate-head h1{font-size:19px;margin:0 0 3px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.tab{background:none;border:0;padding:11px 4px;margin-right:22px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;position:relative;top:1px}
+.tab.active{color:var(--ink);font-weight:600;border-bottom-color:var(--blue)}
+.tab.locked{color:#c7ccd6;cursor:not-allowed}
+.tabpanel{animation:fade .18s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+.block{margin-bottom:20px}
+.block h3{font-size:14px;margin:0 0 8px}
+.block p{font-size:13px;line-height:1.85;color:#4b5468;margin:0}
+.usage-summary{display:flex;align-items:center;gap:10px;margin:10px 0 14px}
+.meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.stage-list{border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.stage-row{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.stage-row:last-child{border-bottom:0}
+.stage-name{width:120px;flex:none;font-size:12.5px;font-weight:600;padding-top:1px}
+.stage-note{flex:1;font-size:12.5px;color:#5b6579;line-height:1.7}
+.stage-pill{flex:none;font-size:11px;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.stage-pill.used{background:#eaf1fc;color:var(--blue-deep)}
+.stage-pill.solo{background:#f1f2f5;color:#8992a1}
+.meta-tag{font-size:11.5px;color:#586179;background:#f1f4f8;border:1px solid var(--line);border-radius:6px;padding:4px 9px}
+
+.idea-board{border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.idea-body{padding:16px 18px}
+.idea-line{display:flex;gap:10px;margin-bottom:12px;font-size:12.5px;line-height:1.8}
+.idea-line:last-child{margin-bottom:0}
+.idea-label{width:58px;flex:none;color:#8a96a6;font-size:11px;padding-top:2px}
+.idea-content{color:#4f6076}
+.idea-tag{display:inline-block;border:1px solid #dfe6ee;background:#fafbfd;border-radius:6px;padding:3px 8px;margin:0 5px 5px 0;color:#52647a;font-size:11.5px}
+.idea-tag.active{border-color:#b9d1ef;background:#f3f8fe;color:#245e9f}
+.cursor{display:inline-block;width:1px;height:12px;background:#7194ba;vertical-align:-2px;margin-left:2px}
+
+.window{border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.winhead{height:44px;padding:0 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;background:#fbfcfe;font-size:12px}
+.messages{padding:16px;background:#f8fafc;min-height:280px}
+.msg{display:flex;gap:8px;margin-bottom:13px}
+.msg.ai .avatar{background:#e7f4ef;color:#2b795e}
+.bubble{max-width:82%;padding:9px 11px;border:1px solid #e4e9ef;border-radius:10px;background:#fff;font-size:12px;line-height:1.7}
+.msg.ai .bubble{background:#f2f8f5}
+.time{display:block;font-size:10px;color:#9aa5b4;margin-top:3px}
+.noai{min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;color:#9aa5b4;font-size:12.5px;padding:20px}
+
+.docbar{border:1px solid var(--line);border-radius:9px 9px 0 0;background:#f8fafc;height:42px;display:flex;align-items:center;padding:0 14px;gap:10px;font-size:12px}
+.docicon{width:24px;height:24px;border-radius:5px;background:#6b46c1;color:#fff;display:grid;place-items:center;font-size:10px;font-weight:700}
+.docbody{border:1px solid var(--line);border-top:0;border-radius:0 0 9px 9px;padding:18px}
+.docbody h4{margin:0 0 12px;font-size:14.5px}
+.docbody #draftText,.docbody #finalText{font-size:13px;color:#46566c;line-height:1.9;white-space:pre-wrap;margin:0}
+
+.evalcard{border:1px solid var(--line);border-radius:9px;padding:20px}
+.evalcard p{font-size:13px;line-height:1.85;color:#4b5468}
+button.primary{border:0;background:var(--blue);color:#fff;border-radius:7px;padding:9px 18px;font-size:12.5px;cursor:pointer}
+button.primary:hover{background:var(--blue-deep)}
+button.primary:disabled{background:#b9c3d2;cursor:not-allowed}
+.panelnav{margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
+.donebox{text-align:center;padding:30px 10px}
+.donebox h3{font-size:15px;margin:0 0 8px}
+.donebox p{font-size:12.5px;color:var(--muted)}
+
+@media(max-width:760px){
+ .sidebar{display:none}
+ .content{padding:18px 14px 40px}
+ .tabs{overflow-x:auto;white-space:nowrap}
+ .search{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+ <aside class="sidebar">
+  <div class="sidebar-brand"><div class="logo">星</div><div><div class="name">星桥科技</div><div class="sub">招聘管理系统</div></div></div>
+  <nav class="sidenav">
+   <a class="active">候选人库</a>
+   <a class="disabled">岗位管理</a>
+   <a class="disabled">测评任务</a>
+   <a class="disabled">数据看板</a>
+  </nav>
+ </aside>
+
+ <div class="main">
+  <div class="topbar">
+   <div class="crumbs" id="crumbs">候选人库</div>
+   <input class="search" placeholder="搜索候选人姓名 / 编号" disabled>
+  </div>
+
+  <div class="content">
+
+   <section id="listView">
+    <div class="panel">
+     <div class="panel-head"><h1>产品策划实习生 · 校园招聘</h1><span class="muted">共 3 人</span></div>
+     <table class="candtable">
+      <thead><tr><th>候选人</th><th>投递时间</th><th>任务状态</th><th>评价状态</th><th></th></tr></thead>
+      <tbody>
+       <tr class="row-active" onclick="openCandidate()">
+        <td><div class="person"><span class="avatar">陈</span><div><div class="pname">陈岩</div><div class="psub">产品创意任务 · 编号 STX-2026-0417</div></div></div></td>
+        <td>2026-03-02</td>
+        <td><span class="pill pill-done">已提交</span></td>
+        <td><span class="pill pill-pending">待评价</span></td>
+        <td><span class="link">查看 ›</span></td>
+       </tr>
+       <tr class="row-disabled">
+        <td><div class="person"><span class="avatar">陈</span><div><div class="pname">陈雨桐</div><div class="psub">产品创意任务 · 编号 STX-2026-0402</div></div></div></td>
+        <td>2026-03-01</td>
+        <td><span class="pill pill-done">已提交</span></td>
+        <td><span class="pill pill-done">已评价</span></td>
+        <td></td>
+       </tr>
+       <tr class="row-disabled">
+        <td><div class="person"><span class="avatar">赵</span><div><div class="pname">赵梓萌</div><div class="psub">产品创意任务 · 编号 STX-2026-0431</div></div></div></td>
+        <td>2026-03-03</td>
+        <td><span class="pill pill-wait">进行中</span></td>
+        <td><span class="pill pill-wait">未分配</span></td>
+        <td></td>
+       </tr>
+      </tbody>
+     </table>
+    </div>
+   </section>
+
+   <section id="detailView" hidden>
+    <div class="back-row"><a class="backlink" onclick="backToList()">← 返回候选人库</a></div>
+    <div class="candidate-head">
+     <span class="avatar big">陈</span>
+     <div>
+      <h1>陈岩</h1>
+      <div class="muted">产品策划实习生 · 校园招聘 · 编号 STX-2026-0417 · 投递时间 2026-03-02</div>
+     </div>
+     <span class="pill pill-pending" style="margin-left:auto">待评价</span>
+    </div>
+
+    <!-- 当前页停留提示（无进度条），结构固定，只改数字 -->
+    <div class="stay-hint" id="stayHint">
+      <span class="dot"></span>
+      <span id="stayText">本页需停留 <span class="count" id="stayCount">30</span> 秒后可进入下一步</span>
+    </div>
+
+    <nav class="tabs" id="tabs">
+     <button class="tab active" data-tab="brief" onclick="selectTab('brief')">任务说明</button>
+     <button class="tab locked" data-tab="idea" onclick="selectTab('idea')">构思过程</button>
+     <button class="tab locked" data-tab="ai" onclick="selectTab('ai')">AI协作记录</button>
+     <button class="tab locked" data-tab="final" onclick="selectTab('final')">最终提交</button>
+     <button class="tab locked" data-tab="eval" onclick="selectTab('eval')">招聘官评价</button>
+    </nav>
+
+    <div class="panels">
+
+     <div class="tabpanel" data-panel="brief">
+      <div class="block">
+       <h3>任务背景</h3>
+       <p>假设候选人正在参加一家互联网公司的产品策划岗位招聘。公司计划面向大学生开发一项新的智能服务，希望了解应聘者发现需求和提出创意的能力，因此设置了本项模拟任务。</p>
+      </div>
+      <div class="block">
+       <h3>任务要求</h3>
+       <p>围绕"如何改善大学生的学习或校园生活"这一主题，设计一个新的产品或服务，可选择学习规划、课程选择、校园生活、求职准备、时间管理等场景，或自行选择其他场景，说明该产品主要解决什么问题、具体提供什么服务，以及为什么大学生会需要它。要求最终形成一份约 500–800 字的产品创意方案。</p>
+      </div>
+      <div class="panelnav"><button class="primary" id="nextBtn-brief" onclick="goTo('idea')" disabled>下一步：查看构思过程</button></div>
+     </div>
+
+     <div class="tabpanel" data-panel="idea" hidden>
+      <div class="block">
+       <h3>构思草稿</h3>
+       <div class="idea-board">
+        <div class="idea-body">
+         <div class="idea-line"><div class="idea-label">先想什么</div><div class="idea-content"><span class="idea-tag">求职准备</span><span class="idea-tag">时间管理</span><span class="idea-tag">校园生活</span><span class="idea-tag active">选课与学习规划</span></div></div>
+         <div class="idea-line"><div class="idea-label">为什么选</div><div class="idea-content">选课信息比较分散，学生常常只能参考学长学姐的零散经验；如果能结合个人情况给出更有针对性的建议，可能更有价值。</div></div>
+         <div class="idea-line"><div class="idea-label">继续想</div><div class="idea-content">不只是推荐某一门课，而是帮助学生把选课和后续学习规划联系起来。</div></div>
+         <div class="idea-line"><div class="idea-label">暂定方向</div><div class="idea-content"><b>大学生个性化学习规划</b><span class="cursor"></span></div></div>
+        </div>
+       </div>
+       <div class="meta-row"><span class="meta-tag">编辑时段 14:02–14:13</span><span class="meta-tag">修改 4 次</span></div>
+      </div>
+      <div class="panelnav"><button class="primary" id="nextBtn-idea" onclick="goTo('ai')" disabled>下一步：查看 AI 协作记录</button></div>
+     </div>
+
+     <div class="tabpanel" data-panel="ai" hidden>
+      <div class="block">
+       <h3>AI 使用情况</h3>
+       <div class="usage-summary">
+        <span class="pill" id="usagePill"></span>
+        <span class="muted" id="usageSub"></span>
+       </div>
+       <div class="stage-list" id="stageList"></div>
+      </div>
+      <div class="block">
+       <h3>AI 工具对话记录</h3>
+       <div class="window">
+        <div class="winhead"><b>Insight AI</b></div>
+        <div class="messages" id="messages"></div>
+       </div>
+       <div class="meta-row" id="aiMeta"></div>
+      </div>
+      <div class="panelnav"><button class="primary" id="nextBtn-ai" onclick="goTo('final')" disabled>下一步：查看最终提交</button></div>
+     </div>
+
+     <div class="tabpanel" data-panel="final" hidden>
+      <div class="block">
+       <div class="docbody" style="border-radius:9px">
+        <h4>产品创意任务 · 最终提交</h4>
+        <p id="finalText"></p>
+       </div>
+       <div class="meta-row" id="finalMeta"></div>
+      </div>
+      <div class="panelnav"><button class="primary" id="nextBtn-final" onclick="goTo('eval')" disabled>下一步：进入招聘官评价</button></div>
+     </div>
+
+     <div class="tabpanel" data-panel="eval" hidden>
+      <div id="evalIntro" class="evalcard">
+       <h3 style="margin:0 0 10px;font-size:15px">请回顾以上任务过程后再评价</h3>
+       <p>建议先查看任务说明、构思过程、AI协作记录、方案整理与最终提交五个标签页，再对陈岩的表现给出评价。</p>
+       <div style="margin-top:16px"><button class="primary" id="nextBtn-eval" onclick="startEval()">进入评价问卷</button></div>
+      </div>
+      <div id="evalDone" class="evalcard donebox" hidden>
+       <h3>该候选人的任务部分已完成</h3>
+       <p>请根据实验平台后续提示完成独立问卷。</p>
+      </div>
+     </div>
+
+    </div>
+   </section>
+
+  </div>
+ </div>
+</div>
+
+<script>
+const params=new URLSearchParams(location.search);
+let ai=params.get('ai');
+if(!['full','partial','none'].includes(ai))ai='partial';
+function $(id){return document.getElementById(id)}
+
+const order=['brief','idea','ai','final','eval'];
+let maxUnlocked=0;
+
+// ———— 每页停留 30 秒逻辑（eval 页除外）————
+const STAY_SECONDS = 30;
+let timerInterval = null;
+let currentTab = 'brief';
+const tabStayed = { brief:false, idea:false, ai:false, final:false, eval:true }; // eval 默认已完成
+
+function stopTimer(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+}
+
+function startStayTimer(tabName){
+  stopTimer();
+  const hint = $('stayHint');
+  const textEl = $('stayText');
+  const btn = $('nextBtn-' + tabName);
+
+  // eval 页不倒计时，直接隐藏提示并解锁
+  if(tabName === 'eval'){
+    hint.classList.add('hide');
+    if(btn) btn.disabled = false;
+    return;
+  }
+
+  hint.classList.remove('hide');
+
+  // 已经停留过 → 直接解锁
+  if(tabStayed[tabName]){
+    hint.classList.add('done');
+    textEl.innerHTML = '本页已停留完成，可继续下一步';
+    if(btn) btn.disabled = false;
+    return;
+  }
+
+  hint.classList.remove('done');
+  let remain = STAY_SECONDS;
+  textEl.innerHTML = '本页需停留 <span class="count" id="stayCount">' + remain + '</span> 秒后可进入下一步';
+  if(btn) btn.disabled = true;
+
+  timerInterval = setInterval(()=>{
+    remain -= 1;
+    if(remain < 0) remain = 0;
+    const c = document.getElementById('stayCount');
+    if(c) c.textContent = remain;
+    if(remain <= 0){
+      stopTimer();
+      tabStayed[tabName] = true;
+      hint.classList.add('done');
+      textEl.innerHTML = '本页已停留完成，可继续下一步';
+      const b = $('nextBtn-' + tabName);
+      if(b) b.disabled = false;
+    }
+  }, 1000);
+}
+
+function openCandidate(){
+  $('listView').hidden=true;
+  $('detailView').hidden=false;
+  $('crumbs').innerHTML='候选人库 / <b>陈岩</b>';
+  maxUnlocked=0;
+  // 重置各页停留状态（eval 保持 true）
+  tabStayed.brief = false;
+  tabStayed.idea = false;
+  tabStayed.ai = false;
+  tabStayed.final = false;
+  tabStayed.eval = true;
+  updateTabLocks();
+  selectTab('brief');
+  window.scrollTo({top:0});
+}
+
+function backToList(){
+  stopTimer();
+  $('detailView').hidden=true;
+  $('listView').hidden=false;
+  $('crumbs').textContent='候选人库';
+  window.scrollTo({top:0});
+}
+
+function updateTabLocks(){
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('locked',order.indexOf(t.dataset.tab)>maxUnlocked);
+  });
+}
+
+function selectTab(name){
+  if(order.indexOf(name)>maxUnlocked)return;
+  currentTab = name;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.hidden=(p.dataset.panel!==name));
+  if(name==='ai')renderAI();
+  if(name==='final')renderFinal();
+  startStayTimer(name);
+  window.scrollTo({top:0});
+}
+
+function goTo(name){
+  if(!tabStayed[currentTab]) return;
+  const idx=order.indexOf(name);
+  if(idx>maxUnlocked)maxUnlocked=idx;
+  updateTabLocks();
+  selectTab(name);
+}
+
+function msg(t,who,time){
+ return `<div class="msg ${who==='ai'?'ai':''}"><div class="avatar">${who==='ai'?'AI':'陈'}</div><div class="bubble">${t}<span class="time">${time}</span></div></div>`;
+}
+
+const convo={
+none:[],
+partial:[
+  ['我现在比较倾向做选课和学习规划，但市面上已经有不少课程推荐类App了。你觉得这个方向还有没有可以做的地方？','me','14:05'],
+  ['可以从"持续规划"这个角度考虑。现有工具更多是课程信息展示或单次推荐，如果能结合学生的学习进展持续调整建议，可能会有一定区别。','ai','14:05'],
+  ['这个思路不错。我想把它做成一个不只是推荐课程、还能帮助学生规划后续学习的工具。你觉得核心功能先放哪些比较合适？','me','14:07'],
+  ['可以先考虑三部分：个性化选课建议、与目标方向相关的技能缺口提示，以及根据学习进展动态调整的学习路径。','ai','14:07'],
+  ['我还担心第一次使用需要填的信息太多，会不会增加门槛？','me','14:09'],
+  ['可以采用逐步完善的方式，第一次只收集少量必要信息，后续再根据学生的学习情况逐渐补充。','ai','14:09'],
+  ['有道理。具体产品名称和方案文字我先自己整理，最后再检查一下整体结构。','me','14:11'],
+  ['可以重点看看"用户问题、产品功能和实际使用场景"三部分是不是能够对应起来。','ai','14:12']
+],
+full:[
+  ['我现在先确定一下产品方向。你能不能帮我比较几个大学生比较常见的学习或校园生活场景？我自己选一个。','me','14:02'],
+  ['可以考虑选课与学业规划、时间管理、校园信息服务、求职与实习准备等方向。可以优先看哪个问题比较具体、又有持续需求。','ai','14:02'],
+  ['我还是比较想做选课和学习规划。这个问题比较普遍，而且学生的专业、兴趣和未来方向都不一样。','me','14:04'],
+  ['这个方向可以从"个体差异"和"持续规划"两个方面展开，不一定只做一次性的课程推荐。','ai','14:04'],
+  ['那你帮我把这个思路再往下梳理一下，看看可以具体做成什么。','me','14:05'],
+  ['可以设计一个个性化学习规划助手：根据学生已修课程、兴趣和目标方向提供选课建议，提示相关技能缺口，并随着学习进展更新后续规划。','ai','14:05'],
+  ['我觉得"持续更新"可以作为主要区别。普通选课工具可能更多解决"选哪门课"，我们可以进一步解决"这些课程怎么串起来"。','me','14:07'],
+  ['这个定位比较清楚。还可以增加一个具体使用场景，比如学生希望往数据分析方向发展，系统根据已有课程提示后续需要补足的基础能力。','ai','14:07'],
+  ['这个例子可以。产品名称我想用"学路 AI"，强调学习路径。接下来我自己整理完整方案。','me','14:10'],
+  ['整理时可以重点检查：产品解决的问题是否明确、功能是否真正对应这个问题，以及使用场景是否具体。','ai','14:10'],
+  ['我已经整理好初稿了。你再帮我看看整体逻辑有没有明显遗漏。','me','14:14'],
+  ['整体结构比较完整。可以再把"为什么大学生会需要"写得具体一些，例如说明现有信息和人工指导为什么难以持续匹配个人情况。','ai','14:14'],
+  ['明白，我会自己修改这一部分，然后检查全文再提交。','me','14:16']
+]
+};
+
+let aiRendered=false;
+const stageUsage={
+ none:{
+  pill:'未使用 AI',pillClass:'solo',
+  sub:'候选人在全部环节独立完成。',
+  stages:[
+   {name:'构思产品方向',used:false,note:'自行列出候选场景并确定"选课与学习规划"方向。'},
+   {name:'功能与体验设计',used:false,note:'核心功能与信息填写方式均由本人设计。'},
+   {name:'方案撰写',used:false,note:'产品名称与全文由本人撰写。'},
+   {name:'提交前检查',used:false,note:'自行检查问题、功能与场景是否对应。'}
+  ]
+ },
+ partial:{
+  pill:'部分环节使用 AI',pillClass:'used',
+  sub:'4 个环节中，1 个环节与 AI 讨论，其余 3 个环节独立完成。',
+  stages:[
+   {name:'构思产品方向',used:false,note:'方向由本人独立确定，未与 AI 讨论。'},
+   {name:'功能与体验设计',used:true,note:'就核心功能取舍、信息填写门槛与 AI 讨论后确定方案。'},
+   {name:'方案撰写',used:false,note:'产品名称与方案文字均由本人撰写。'},
+   {name:'提交前检查',used:false,note:'参考 AI 给出的检查角度，由本人完成实际检查。'}
+  ]
+ },
+ full:{
+  pill:'多个环节使用 AI',pillClass:'used',
+  sub:'4 个环节中，3 个环节与 AI 讨论，1 个环节独立完成。',
+  stages:[
+   {name:'构思产品方向',used:true,note:'与 AI 比较多个校园场景后确定方向。'},
+   {name:'功能与体验设计',used:true,note:'与 AI 共同梳理核心功能与具体使用场景。'},
+   {name:'方案撰写',used:false,note:'产品名称与方案文字由本人自行整理成文。'},
+   {name:'提交前检查',used:true,note:'请 AI 检查初稿逻辑，并据此修改后提交。'}
+  ]
+ }
+};
+
+function renderAI(){
+ if(aiRendered)return;
+ aiRendered=true;
+ const u=stageUsage[ai];
+ $('usagePill').textContent=u.pill;
+ $('usagePill').className='pill '+(u.pillClass==='used'?'pill-pending':'pill-wait');
+ $('usageSub').textContent=u.sub;
+ $('stageList').innerHTML=u.stages.map(s=>
+  `<div class="stage-row"><div class="stage-name">${s.name}</div><div class="stage-note">${s.note}</div><span class="stage-pill ${s.used?'used':'solo'}">${s.used?'使用 AI':'独立完成'}</span></div>`
+ ).join('');
+ if(ai==='none'){
+  $('messages').innerHTML='<div class="noai">未检测到该阶段的 AI 工具交互记录。</div>';
+  $('aiMeta').innerHTML='<span class="meta-tag">对话消息数：0</span>';
+ }else{
+  $('messages').innerHTML=convo[ai].map(x=>msg(x[0],x[1],x[2])).join('');
+  $('aiMeta').innerHTML=ai==='partial'
+   ?'<span class="meta-tag">对话消息数：8</span><span class="meta-tag">涉及：功能设计、体验优化</span>'
+   :'<span class="meta-tag">对话消息数：13</span><span class="meta-tag">涉及：方向选择、功能设计、使用场景、方案检查</span>';
+ }
+}
+
+const FINAL=`我设计的产品是「学路 AI」——一款面向在校大学生的个性化学习规划助手，聚焦解决"选课迷茫、规划缺失"的问题。
+
+目前许多大学生在选课和学业规划上存在明显困扰：培养方案条目繁杂，学长学姐的经验零散且因人而异，辅导员和班主任精力有限，难以为每位学生提供细致的一对一指导。很多学生只能凭感觉选课，容易出现学分虚耗、课程难度与自身基础不匹配、临近毕业才发现某些关键课程未修等问题，也常常在"我到底适合什么方向"上感到迷茫。
+
+「学路 AI」希望通过智能化的方式弥补这一空缺。学生首次使用时只需填写专业和1—2个感兴趣的方向，系统结合学校的培养方案、历年选课与就业数据，逐步生成一份可视化的"学习路径图"：包括每学期建议选修的课程组合、与目标方向相关的技能缺口提示，以及推荐的课外项目或证书。举例来说，一名大二学生若希望转向数据分析方向，系统会结合其已修课程，提示补修统计学、数据库等基础课程，并推荐相关的实习项目和证书考试节点。系统还会根据每学期新的成绩和反馈动态调整建议，形成一个随学业进展持续更新的规划工具，而不是一次性的报告。
+
+之所以认为大学生会需要这样的产品，是因为选课与规划恰恰是信息高度不对称、又对每个人高度个性化的场景：官方资料枯燥抽象，朋辈经验片面且滞后，而能提供持续一对一指导的辅导员或职业顾问，往往一人要面对数百名学生，很难逐一兼顾。AI 恰好擅长处理这种"海量信息+个体差异"的匹配问题，能以极低的边际成本为每一位学生提供接近"私人学业顾问"的体验，帮助他们更从容地规划四年学业，而不是等到大三大四才追悔莫及。`;
+
+let finalRendered=false;
+function renderFinal(){
+ if(finalRendered)return;
+ finalRendered=true;
+ $('finalText').textContent=FINAL;
+ $('finalMeta').innerHTML={
+  none:'<span class="meta-tag">AI 使用情况：未使用</span>',
+  partial:'<span class="meta-tag">AI 使用情况：部分环节使用</span>',
+  full:'<span class="meta-tag">AI 使用情况：多个环节使用</span>'
+ }[ai];
+}
+
+function startEval(){
+ $('evalIntro').hidden=true;
+ $('evalDone').hidden=false;
+}
+</script>
+</body>
+</html>
